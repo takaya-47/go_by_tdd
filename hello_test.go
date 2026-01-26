@@ -7,7 +7,7 @@ func TestHello(t *testing.T) {
 		t.Helper() // このメソッドがヘルパーであることをテストスイートに伝える
 
 		if got != want {
-			t.Errorf("got %q want %q", got , want)
+			t.Errorf("got %q want %q", got, want)
 		}
 	}
 
