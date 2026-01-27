@@ -16,3 +16,12 @@ func BenchmarkRepeat(b *testing.B) {
 		Repeat("a", 10)
 	}
 }
+
+func TestToLower(t *testing.T) {
+	expected := "test driven development"
+	actual := ToLower("Test Driven DevelopmenT")
+
+	if actual != expected {
+		t.Errorf("expected %q but got %q", expected, actual)
+	}
+}
