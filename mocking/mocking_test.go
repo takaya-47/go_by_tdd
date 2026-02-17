@@ -7,8 +7,9 @@ import (
 
 func TestCountD(t *testing.T) {
 	buffer := &bytes.Buffer{}
+	spySleeper := &SpySleeper{}
 
-	CountDown(buffer)
+	CountDown(buffer, spySleeper)
 
 	got := buffer.String()
 	want := `3
@@ -18,5 +19,9 @@ Go!`
 
 	if got != want {
 		t.Errorf("got %q want %q", got, want)
+	}
+
+	if spySleeper.Calls != 4 {
+		t.Errorf("not enough calls to sleeper, want 4 got %d", spySleeper.Calls)
 	}
 }
