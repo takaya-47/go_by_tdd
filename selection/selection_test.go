@@ -10,6 +10,7 @@ import (
 func TestRace(t *testing.T) {
 	slowServer := makeDelayedServer(20 * time.Millisecond)
 	fastServer := makeDelayedServer(0 * time.Millisecond)
+	// 可読性向上のためサーバー生成処理の直後に書くのが良い
 	defer slowServer.Close()
 	defer fastServer.Close()
 
