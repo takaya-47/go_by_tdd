@@ -8,17 +8,10 @@ import (
 )
 
 func TestRace(t *testing.T) {
-	fn := func(w http.ResponseWriter, r *http.Request) {
-		time.Sleep(20 * time.Millisecond) // 20ミリ秒あえて待つことで遅いサーバーをシミュレート
-		w.WriteHeader(http.StatusOK)
-	}
-	handler := http.HandlerFunc(fn) // fnをHandlerFuncという関数型にキャスト
-    slowServer := httptest.NewServer(handler)
-
-	fn = func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	}
-	fastServer := httptest.NewServer(http.HandlerFunc(fn))
+	slowServer := makeDelayedServer(20 * time.Millisecond)
+	fastServer := makeDelayedServer(0 * time.Millisecond)
+	defer slowServer.Close()
+	defer fastServer.Close()
 
 	slowUrl := slowServer.URL
 	fastUrl := fastServer.URL
@@ -29,4 +22,13 @@ func TestRace(t *testing.T) {
 	if got != want {
 		t.Errorf("got '%s', want '%s'", got, want)
 	}
+}
+
+func makeDelayedServer(delay time.Duration) *httptest.Server {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		time.Sleep(delay)
+		w.WriteHeader(http.StatusOK)
+	}
+	handler := http.HandlerFunc(fn) // fnをhttp.HandlerFuncという関数型にキャスト
+	return httptest.NewServer(handler)
 }
