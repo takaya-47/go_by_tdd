@@ -48,5 +48,3 @@ func BenchmarkCheckWebisites(b *testing.B) {
 		CheckWebsites(slowStubWebsiteChecker, urls)
 	}
 }
-
-// TODO: https://andmorefine.gitbook.io/learn-go-with-tests/go-fundamentals/concurrency#saserunoninakdowoku
