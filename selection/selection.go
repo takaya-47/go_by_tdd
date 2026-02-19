@@ -1,16 +1,20 @@
 package selection
 
 import (
+	"fmt"
 	"net/http"
+	"time"
 )
 
-func Racer(a, b string) (winner string) {
-	// 先にレスポンスが帰ってきたURLを返却すればいいのでselectを使う
+func Racer(a, b string) (winner string, err error) {
+	// selectで複数のチャネルからの受信を待つ。先にレスポンスが帰ってきたURLを返却すればいいのでselectを使う。
 	select {
 	case <-ping(a):
-		return a
+		return a, nil
 	case <-ping(b):
-		return b
+		return b, nil
+	case <-time.After(10 * time.Second):
+		return "", fmt.Errorf("timed out waiting for %s and %s", a, b)
 	}
 }
 
