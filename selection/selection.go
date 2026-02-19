@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-var tenSecondsTimeout = 10 * time.Second
+const tenSecondsTimeout = 10 * time.Second
 
 func Racer(a, b string) (winner string, err error) {
 	return ConfigurableRacer(a, b, tenSecondsTimeout)
