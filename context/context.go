@@ -12,7 +12,13 @@ type Store interface {
 
 func Server(store Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		data, _ := store.Fetch(r.Context())
+		data, err := store.Fetch(r.Context())
+
+		if err != nil {
+			// エラーが発生した場合は何も書き込まずに終了する
+			return
+		}
+
 		fmt.Fprint(w, data)
 	}
 }

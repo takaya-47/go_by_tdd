@@ -2,6 +2,7 @@ package context
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -21,10 +22,12 @@ func (s *SpyStore) Fetch(ctx context.Context) (string, error) {
 		for _, c := range s.response {
 			select {
 			case <-ctx.Done():
+				// 処理が中止になったらログを出力してゴルーチンを終了する
 				s.t.Log("spy store got cancelled")
 				return
 			default:
 				time.Sleep(10 * time.Millisecond)
+				s.t.Logf("spy store is processing %v", string(c))
 				result += string(c)
 			}
 		}
@@ -33,10 +36,29 @@ func (s *SpyStore) Fetch(ctx context.Context) (string, error) {
 
 	select {
 	case <-ctx.Done():
+		// コンテキストがキャンセルされたら、エラーを返す
 		return "", ctx.Err()
 	case res := <-data:
 		return res, nil
 	}
+}
+
+type SpyResponseWriter struct {
+	written bool
+}
+
+func (s *SpyResponseWriter) Header() http.Header {
+	s.written = true
+	return nil
+}
+
+func (s *SpyResponseWriter) Write([]byte) (int, error) {
+	s.written = true
+	return 0, errors.New("not implemented")
+}
+
+func (s *SpyResponseWriter) WriteHeader(statusCode int) {
+	s.written = true
 }
 
 func TestHandler(t *testing.T) {
@@ -55,21 +77,25 @@ func TestHandler(t *testing.T) {
 		}
 	})
 
-	// t.Run("tells store to cancel work if request is cancelled", func(t *testing.T) {
-	// 	data := "hello, world"
-	// 	store := &SpyStore{response: data, t: t}
-	// 	svr := Server(store)
+	t.Run("tells store to cancel work if request is cancelled", func(t *testing.T) {
+		data := "hello, world"
+		store := &SpyStore{response: data, t: t}
+		svr := Server(store)
 
-	// 	request := httptest.NewRequest(http.MethodGet, "/", nil)
+		request := httptest.NewRequest(http.MethodGet, "/", nil)
 
-	// 	cancellingCtx, cancel := context.WithCancel(request.Context())
-	// 	time.AfterFunc(5 * time.Millisecond, cancel)
-	// 	request = request.WithContext(cancellingCtx)
+		// request.Context()を親にもつキャンセリング可能なコンテキストを作成し、5ミリ秒後にキャンセルする
+		cancellingCtx, cancel := context.WithCancel(request.Context())
+		time.AfterFunc(5*time.Millisecond, cancel)
 
-	// 	response := httptest.NewRecorder()
+		// キャンセリング可能なコンテキストをリクエストに関連付ける
+		request = request.WithContext(cancellingCtx)
+		response := &SpyResponseWriter{}
 
-	// 	svr.ServeHTTP(response, request)
+		svr.ServeHTTP(response, request)
 
-	// 	store.assertWasCancelled()
-	// })
+		if response.written {
+			t.Error("a response should not have been written")
+		}
+	})
 }
